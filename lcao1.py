@@ -19,11 +19,11 @@ def run(iteration, params, output_data_table):
 
 	nudge = np.array([0.5, 0.5, 0.5])*latticeLengthPerStep()
 	atom_positions.append(np.array([-0.5*params["spacing"],0,0])+nudge)
-	atom_charges.append(2)
+	atom_charges.append(1)
 	orbital_funcs.append([orbital_1s])
 	#orbital_funcs.append([orbital_1s, orbital_2s, orbital_2p_z, orbital_2p_left, orbital_2p_right])
 	atom_positions.append(np.array([0.5*params["spacing"],0,0])+nudge)
-	atom_charges.append(2)
+	atom_charges.append(1)
 	orbital_funcs.append([orbital_1s])
 	#orbital_funcs.append([orbital_1s, orbital_2s, orbital_2p_z, orbital_2p_left, orbital_2p_right])
 	print("Setup atom positions")
@@ -69,13 +69,14 @@ for i in range(iterations):
 	run(i, params, output_data_table)
 
 print(output_data_table)
-print(f"Lowest Total Energy: {np.min(output_data_table[:, 0]) / charge_e} eV at index {np.argmin(output_data_table[:, 0])}, spacing {spacing_array[np.argmin(output_data_table[:, 0])] / bohr_radius} bohr radii")
-
+min_energy = np.min(output_data_table[:, 0])
+min_energy_index = np.argmin(output_data_table[:, 0])
 hartree_per_eV = 1 / 27.211386
+print(f"Lowest Total Energy: {min_energy / charge_e} eV = {min_energy / charge_e * hartree_per_eV} hartree, at index {min_energy_index}, spacing {spacing_array[min_energy_index] / bohr_radius} bohr radii = {spacing_array[min_energy_index]*1e12} pm")
 plt.plot(spacing_array / bohr_radius, output_data_table[:, 0] / charge_e * hartree_per_eV)
 #plt.legend(labels)
 plt.ylabel("Total Energy (Hartree)")
 plt.xlabel("Bond Length (Bohr Radii)")
-plt.title("He2 Ground State Energy vs Nuclei Separation, via LCAO of 1s, No e- interaction")
+plt.title("H2 Ground State Energy vs Nuclei Separation, LCAO of 1s, no e- interaction")
 plt.show()
 

@@ -45,7 +45,7 @@ def run(iteration, params, output_data_table):
 
 
 	
-	#plotMOs(atomic_orbitals, eigs, quantile=0.5, num_cols=5)
+	#plotMOs(atomic_orbitals, eigs, atom_positions, atom_charges, quantile=0.5, num_cols=5)
 	#exit()
 
 

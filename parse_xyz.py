@@ -66,3 +66,21 @@ def valence_charges(atom_charges):
 		else:
 			tmp.append((charge - 2) % 8)
 	return tmp
+
+
+def table_effective_charges(atom_charges): # this is so bad.
+	effective_charge_table = [# adapted from wikipedia http://en.wikipedia.org/wiki/Effective_nuclear_charge
+		0, 
+		1, # H
+		1.688, # He
+		1.279, # Li
+		1.912, # Be
+		2.576, # B
+		3.217, # C
+		3.847, # N
+		4.492 # O
+	]
+	tmp = []
+	for charge in atom_charges:
+		tmp.append(effective_charge_table[charge])
+	return tmp

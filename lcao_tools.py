@@ -47,20 +47,19 @@ def groundStateEnergy(orbital_energies, atom_positions, atom_charges):
 				nuclei_replusion_energy += atom_charges[i]*atom_charges[j]*charge_e**2 / (4 * math.pi * epsilon0 * dist)
 	return total_orbital_energy + nuclei_replusion_energy
 
-def homo_lumo_gap(orbital_energies, atom_charges):
+def homo_lumo_gap(orbital_energies, num_electrons):
 	orbital_energies = np.sort(orbital_energies)
-	num_electrons = sum(atom_charges)
 	homo_index = (num_electrons - 1) // 2
 	homo = orbital_energies[homo_index]
 	lumo = orbital_energies[homo_index + 1]
 	return lumo - homo
 
-def plotAtomPositions(ax, atom_positions, atom_charges):
+def plotAtomPositions(ax, atom_positions):
 	colors = ["black", "pink", "yellow", "grey", "blue", "red", "purple", "green", "brown", "orange"] # aaaaa this is bad
-	for i in range(len(atom_charges)):
-		ax.scatter(atom_positions[i][0] / bohr_radius, atom_positions[i][1] / bohr_radius, atom_positions[i][2] / bohr_radius, color = colors[atom_charges[i] - 1])
+	for i in range(len(atom_positions)):
+		ax.scatter(atom_positions[i][0] / bohr_radius, atom_positions[i][1] / bohr_radius, atom_positions[i][2] / bohr_radius, color = colors[0]) # TODO color
 
-def plotMOs(atomic_orbitals, eigs, atom_positions, atom_charges, quantile = 0.5, num_cols = 3):
+def plotMOs(atomic_orbitals, eigs, atom_positions, num_electrons, quantile = 0.5, num_cols = 3):
 	fig = plt.figure()
 	num_plots = eigs.eigenvalues.shape[0]
 	num_rows = math.ceil(num_plots / num_cols)
@@ -68,26 +67,24 @@ def plotMOs(atomic_orbitals, eigs, atom_positions, atom_charges, quantile = 0.5,
 	for i in np.argsort(eigs.eigenvalues):
 		ax = setupAxes(f"E = {np.real(eigs.eigenvalues[i]) / charge_e} eV", num_rows, num_cols, plot_index)
 		plotPsi(np.sum((np.transpose(atomic_orbitals) * eigs.eigenvectors[:, i]).transpose(), axis = 0), ax, quantile)
-		plotAtomPositions(ax, atom_positions, atom_charges)
+		plotAtomPositions(ax, atom_positions)
 		plot_index += 1
 	plt.show()
 
-def plotHOMOLUMO(atomic_orbitals, eigs, atom_positions, atom_charges, quantile = 0.5):
-	num_electrons = sum(atom_charges)
+def plotHOMOLUMO(atomic_orbitals, eigs, atom_positions, num_electrons, quantile = 0.5):
 	orbital_energies = np.sort(np.real(eigs.eigenvalues))
 	homo_index = (num_electrons - 1) // 2
 	lumo_index = homo_index + 1
 	fig = plt.figure(figsize = (11, 6))
 	ax1 = setupAxes(f"HOMO {orbital_energies[homo_index] / charge_e} eV", 1, 2, 1)
 	plotPsi(np.sum((np.transpose(atomic_orbitals) * eigs.eigenvectors[:, homo_index]).transpose(), axis = 0), ax1, quantile)
-	plotAtomPositions(ax1, atom_positions, atom_charges)
+	plotAtomPositions(ax1, atom_positions)
 	ax2 = setupAxes(f"LUMO {orbital_energies[lumo_index] / charge_e} eV", 1, 2, 2)
 	plotPsi(np.sum((np.transpose(atomic_orbitals) * eigs.eigenvectors[:, lumo_index]).transpose(), axis = 0), ax2, quantile)
-	plotAtomPositions(ax2, atom_positions, atom_charges)
+	plotAtomPositions(ax2, atom_positions)
 	plt.show()
 
-def plotHOMOLUMO_more(atomic_orbitals, eigs, atom_positions, atom_charges, quantile = 0.5):
-	num_electrons = sum(atom_charges)
+def plotHOMOLUMO_more(atomic_orbitals, eigs, atom_positions, num_electrons, quantile = 0.5):
 	orbital_energies = np.sort(np.real(eigs.eigenvalues))
 	homo_index = (num_electrons - 1) // 2
 	lumo_index = homo_index + 1
@@ -95,17 +92,17 @@ def plotHOMOLUMO_more(atomic_orbitals, eigs, atom_positions, atom_charges, quant
 	if homo_index-1 >= 0 and homo_index-1 < len(eigs.eigenvalues):
 		ax1 = setupAxes(f"HOMO-1 {orbital_energies[homo_index-1] / charge_e} eV", 1, 4, 1)
 		plotPsi(np.sum((np.transpose(atomic_orbitals) * eigs.eigenvectors[:, homo_index - 1]).transpose(), axis = 0), ax1, quantile)
-		plotAtomPositions(ax1, atom_positions, atom_charges)
+		plotAtomPositions(ax1, atom_positions)
 	if homo_index >= 0 and homo_index < len(eigs.eigenvalues):
 		ax2 = setupAxes(f"HOMO {orbital_energies[homo_index] / charge_e} eV", 1, 4, 2)
 		plotPsi(np.sum((np.transpose(atomic_orbitals) * eigs.eigenvectors[:, homo_index]).transpose(), axis = 0), ax2, quantile)
-		plotAtomPositions(ax2, atom_positions, atom_charges)
+		plotAtomPositions(ax2, atom_positions)
 	if lumo_index >= 0 and lumo_index < len(eigs.eigenvalues):
 		ax3 = setupAxes(f"LUMO {orbital_energies[lumo_index] / charge_e} eV", 1, 4, 3)
 		plotPsi(np.sum((np.transpose(atomic_orbitals) * eigs.eigenvectors[:, lumo_index]).transpose(), axis = 0), ax3, quantile)
-		plotAtomPositions(ax3, atom_positions, atom_charges)
+		plotAtomPositions(ax3, atom_positions)
 	if lumo_index+1 >= 0 and lumo_index+1 < len(eigs.eigenvalues):
 		ax4 = setupAxes(f"LUMO+1 {orbital_energies[lumo_index+1] / charge_e} eV", 1, 4, 4)
 		plotPsi(np.sum((np.transpose(atomic_orbitals) * eigs.eigenvectors[:, lumo_index + 1]).transpose(), axis = 0), ax4, quantile)
-		plotAtomPositions(ax4, atom_positions, atom_charges)
+		plotAtomPositions(ax4, atom_positions)
 	plt.show()

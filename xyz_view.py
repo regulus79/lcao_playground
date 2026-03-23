@@ -10,6 +10,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("inputfile")
 parser.add_argument("--orbitals", type=str, choices=["all", "valence", "pz"], required=True)
 parser.add_argument("--plot", type=str, choices=["all", "frontier"], required=True)
+parser.add_argument("--shielding", type=str, choices=["none", "valence", "table"], required=True)
 parser.add_argument("--quantile", type=float, default=0.5)
 parser.add_argument("--buffer", type=float, default=3)
 args = parser.parse_args()
@@ -21,10 +22,16 @@ atom_charges = []
 with open(args.inputfile, "r") as file:
 	atom_positions, atom_charges = parse_xyz.parse(file.read())
 
-valence_charges = parse_xyz.valence_charges(atom_charges)
+effective_charges = None
 print("Atom positions (m):", atom_positions)
 print("Atom charges:", atom_charges)
-print("Valence charges:", valence_charges)
+if args.shielding == "none":
+	effective_charges = atom_charges
+elif args.shielding == "valence":
+	effective_charges = parse_xyz.valence_charges(atom_charges)
+elif args.shielding == "table":
+	effective_charges = parse_xyz.table_effective_charges(atom_charges)
+print("Effective charges:", effective_charges)
 
 molecule_extent = np.max(np.abs(atom_positions))
 print("Molecule max extent (m):", molecule_extent)
@@ -40,16 +47,20 @@ for i in range(len(atom_positions)):
 
 orbital_funcs = []
 atomic_orbitals = []
+num_electrons = None
 total_potential = np.zeros(lattice_shape, dtype = complex)
 if args.orbitals == "all":
 	orbital_funcs = parse_xyz.default_orbital_functions(atom_charges)
-	generate_orbitals(atom_positions, atom_charges, orbital_funcs, atomic_orbitals, total_potential)
+	generate_orbitals(atom_positions, effective_charges, orbital_funcs, atomic_orbitals, total_potential)
+	num_electrons = sum(atom_charges)
 elif args.orbitals == "valence":
 	orbital_funcs = parse_xyz.valence_orbital_functions(atom_charges)
-	generate_orbitals(atom_positions, valence_charges, orbital_funcs, atomic_orbitals, total_potential)
+	generate_orbitals(atom_positions, effective_charges, orbital_funcs, atomic_orbitals, total_potential)
+	num_electrons = sum(parse_xyz.valence_charges(atom_charges))
 elif args.orbitals == "pz":
 	orbital_funcs = parse_xyz.z_orbital_functions(atom_charges)
-	generate_orbitals(atom_positions, atom_charges, orbital_funcs, atomic_orbitals, total_potential) # TODO
+	generate_orbitals(atom_positions, effective_charges, orbital_funcs, atomic_orbitals, total_potential) # TODO
+	num_electrons = sum(atom_charges)
 print(f"Generated {len(atomic_orbitals)} orbitals")
 
 eigs = calculateMOcoeffs(atomic_orbitals, total_potential)
@@ -66,24 +77,11 @@ for i in np.argsort(eigs.eigenvalues):
 energies = np.real(np.sort(eigs.eigenvalues))
 #totalEnergy = groundStateEnergy(energies, atom_positions, atom_charges)
 #print(f"Ground State Energy: {totalEnergy / charge_e} eV")
-homo_lumo_gap_energy = None
-if args.orbitals == "all":
-	homo_lumo_gap_energy = homo_lumo_gap(energies, atom_charges)
-elif args.orbitals == "valence":
-	homo_lumo_gap_energy = homo_lumo_gap(energies, valence_charges)
-elif args.orbitals == "pz":
-	homo_lumo_gap_energy = homo_lumo_gap(energies, pz_charges)
+homo_lumo_gap_energy = homo_lumo_gap(energies, num_electrons)
 
 print(f"HOMO-LUMO Gap: {homo_lumo_gap_energy / charge_e} eV")
 
 if args.plot == "all":
-	if args.orbitals == "valence":
-		plotMOs(atomic_orbitals, eigs, atom_positions, valence_charges, quantile=args.quantile, num_cols=4)
-	else:
-		plotMOs(atomic_orbitals, eigs, atom_positions, atom_charges, quantile=args.quantile, num_cols=4) # todo what about pz
+	plotMOs(atomic_orbitals, eigs, atom_positions, num_electrons, quantile=args.quantile, num_cols=4)
 elif args.plot == "frontier":
-	#plotHOMOLUMO(atomic_orbitals, eigs, valence_charges, quantile=args.quantile)
-	if args.orbitals == "valence":
-		plotHOMOLUMO_more(atomic_orbitals, eigs, atom_positions, valence_charges, quantile=args.quantile)
-	else:
-		plotHOMOLUMO_more(atomic_orbitals, eigs, atom_positions, atom_charges, quantile=args.quantile)
+	plotHOMOLUMO_more(atomic_orbitals, eigs, atom_positions, num_electrons, quantile=args.quantile)
